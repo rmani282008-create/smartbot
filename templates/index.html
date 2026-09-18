@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Bot</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chatbot {
+            width: 100%;
+            max-width: 760px;
+            height: 720px;
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #1f4ed8;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 14px;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .bubble {
+            max-width: 78%;
+            padding: 12px 15px;
+            border-radius: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .message.bot .bubble {
+            background: #eef2f7;
+            color: #1d2939;
+        }
+
+        .message.user .bubble {
+            background: #1f4ed8;
+            color: #ffffff;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        #messageInput {
+            flex: 1;
+            border: 1px solid #d0d5dd;
+            border-radius: 12px;
+            padding: 13px 15px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        #messageInput:focus {
+            border-color: #1f4ed8;
+        }
+
+        #sendButton {
+            border: none;
+            border-radius: 12px;
+            padding: 0 20px;
+            background: #1f4ed8;
+            color: #ffffff;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        #sendButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 0;
+            }
+
+            .chatbot {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .bubble {
+                max-width: 88%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="chatbot">
+        <header class="header">
+            <h1>Smart Bot</h1>
+            <p>Study-focused AI assistant</p>
+        </header>
+
+        <section id="messages" class="messages">
+            <div class="message bot">
+                <div class="bubble">
+                    Hi! I am Smart Bot. Ask me a study-related question.
+                </div>
+            </div>
+        </section>
+
+        <form id="chatForm" class="input-area">
+            <input
+                id="messageInput"
+                type="text"
+                placeholder="Ask a study question..."
+                autocomplete="off"
+                required
+            >
+            <button id="sendButton" type="submit">Send</button>
+        </form>
+    </main>
+
+    <script>
+        const form = document.getElementById("chatForm");
+        const input = document.getElementById("messageInput");
+        const sendButton = document.getElementById("sendButton");
+        const messages = document.getElementById("messages");
+
+        function addMessage(text, sender) {
+            const message = document.createElement("div");
+            message.className = `message ${sender}`;
+
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+            bubble.textContent = text;
+
+            message.appendChild(bubble);
+            messages.appendChild(message);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage(message, "user");
+
+            input.value = "";
+            input.disabled = true;
+            sendButton.disabled = true;
+
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    addMessage(data.error || "Something went wrong.", "bot");
+                } else {
+                    addMessage(data.reply, "bot");
+                }
+            } catch (error) {
+                addMessage(
+                    "Unable to connect to the chatbot.",
+                    "bot"
+                );
+            } finally {
+                input.disabled = false;
+                sendButton.disabled = false;
+                input.focus();
+            }
+        });
+    </script>
+</body>
+</html>
